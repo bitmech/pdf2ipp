@@ -1,0 +1,16 @@
+version: '3'
+services:
+  pdf2ipp:
+    image: pdf2ipp:latest
+    container_name: pdf2ipp
+    build:
+        context: ../projects/pdf2ipp/
+        dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+      - IPP_IP=192.168.18.238
+    restart: unless-stopped
