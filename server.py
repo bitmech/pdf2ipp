@@ -19,17 +19,17 @@ def size_check(file):
     ptSqr = pdf.getPage(0).mediaBox[2] * pdf.getPage(0).mediaBox[3]
     if ptSqr > 400000:
         print("A4  " + str(ptSqr))
-        return "A4"
+        return "A4", ptSqr
     elif ptSqr < 150000:
         print("Label  " + str(ptSqr))
-        return "label"
+        return "label", ptSqr
     else:
         print("Unknown paper size")
-        return "unknown"
+        return "unknown", ptSqr
 
 def label_print(file):
     print("calling lpr command")
-    subprocess.call(["lp", "-o" "fit-to-page", file])
+    return subprocess.call(["lp", "-o" "fit-to-page", file])
 
 @app.route('/')
 def root():
@@ -46,24 +46,24 @@ def upload_file():
         file = "uploads/" + secure_filename(f.filename)
         f.save(file)
         if pdf_check(file):
-            if size_check(file) == "A4":
+            (printSize, actualPrintSize) = size_check(file)
+            if printSize == "A4":
                 label_print(file)
                 return redirect("/upload", code=302)
             return "great pdf but size is not A4"
         else:
             return "file is not a usable pdf"
     else:
-        return redirect("/upload", code=302)app.route('/uploader', methods = ['GET', 'POST'])
+        return redirect("/upload", code=302)
 
 @app.route('/printrandom')
 def print_random():
     file = 'files/random.pdf'
     if pdf_check(file):
-        if size_check(file) == "A4":
-            label_print(file)
-            return redirect("/upload", code=302)
-        return "great pdf but size is not A4"
+        (printSize, actualPrintSize) = size_check(file)
+        if printSize == "A4":
+            printReturnCode = label_print(file)
+            return str(printReturnCode), 200 
+        return "great pdf but size is not A4 (size is %s)" % actualPrintSize, 400
     else:
-        return "file is not a usable pdf"
-    else:
-        return redirect("/upload", code=302)
+        return "file is not a usable pdf",400
