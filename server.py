@@ -2,6 +2,8 @@ from flask import Flask, escape, render_template, request, redirect
 from werkzeug.utils import secure_filename
 import PyPDF2
 import subprocess
+import os
+import random
 
 app = Flask(__name__)
 
@@ -58,12 +60,23 @@ def upload_file():
 
 @app.route('/printrandom')
 def print_random():
-    file = 'files/random.pdf'
-    if pdf_check(file):
-        (printSize, actualPrintSize) = size_check(file)
-        if printSize == "A4":
-            printReturnCode = label_print(file)
-            return str(printReturnCode), 200 
-        return "great pdf but size is not A4 (size is %s)" % actualPrintSize, 400
-    else:
-        return "file is not a usable pdf",400
+    try:
+        pdfFiles = [x for x in os.listdir('files') if ".pdf" in x.lower()]
+        if(len(pdfFiles) <= 0):
+            return dict(Message='No PDF files found, please add some pdf files'), 500
+        file = random.choice(pdfFiles)
+        print('selected %s to print' % file)
+        return dict(Message='No Op', File=file), 500
+        if pdf_check(file):
+            (printSize, actualPrintSize) = size_check(file)
+            if printSize == "A4":
+                printReturnCode = label_print(file)
+                return dict(Message=str(printReturnCode)), 200 
+            return dict(Message="great pdf but size is not A4 (size is %s)" % 
+                    actualPrintSize, CanvasPrintSize=actualPrintSize), 400
+        else:
+            return dict(Message="file is not a usable pdf"),400
+    except Exception as ex:
+        print('Exception: %s' % str(ex))
+        return dict(Message='Exception thrown while trying to print a random file', 
+                Exception=str(ex))
